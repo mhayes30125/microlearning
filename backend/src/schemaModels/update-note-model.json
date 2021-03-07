@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "group",
+    "type": "object",
+    "properties": {
+      "note": {
+        "type": "string"
+      },
+      "category": {
+        "type": "string"
+      },
+      "question": {
+        "type": "string"
+      },
+      "answer": {
+        "type": "string"
+      },
+      "done": {
+        "type": "boolean"
+      },
+      "attachmentUrl": {
+        "type": "string"
+      }
+    },
+    "required": ["note", "category","question","answer","done","attachmentUrl"],
+    "additionalProperties": false
+  }
