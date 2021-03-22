@@ -1,4 +1,3 @@
-import { integer } from "aws-sdk/clients/cloudfront";
 
 export interface NoteItem {
   userId: string

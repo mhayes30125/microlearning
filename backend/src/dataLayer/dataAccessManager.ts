@@ -11,7 +11,7 @@ export class DataAccessManager{
 
     constructor(
         private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-        private readonly notesTable = process.env.TODOS_TABLE,
+        private readonly notesTable = process.env.NOTES_TABLE,
         private readonly userIdIndex = process.env.USER_ID_INDEX,
         private readonly logger = createLogger('dataAccessManager')){
     }

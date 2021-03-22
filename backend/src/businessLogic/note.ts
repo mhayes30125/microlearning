@@ -68,14 +68,20 @@ export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: stri
 
     var setNewState = 0;
 
-    if(currentNote.done === true)
+    // Check the incoming request to see if we are done and want to move on to the next state.
+    // If there is not another state to move to, then done = true will be saved in the db.
+    // Saving done = true means we are done studying this item.
+    if(noteItemRequest.done === true)
     {
       const currentIndex = states.indexOf(currentNote.state);
       const nextIndex = currentIndex + 1;
       if(nextIndex <= states.length - 1)
       {
         setNewState = states[nextIndex];
-      }
+        
+        // Reset done for the next state
+        noteItemRequest.done = false;
+      }      
     }
     else{
       // If I have marked the answer as not done, then I do not want to 

@@ -107,7 +107,7 @@ export class Notes extends React.PureComponent<NotesProps, NotesState> {
   render() {
     return (
       <div>
-        <Header as="h1">TODOs</Header>
+        <Header as="h1">Notes</Header>
 
         {this.renderCreateNoteInput()}
 
@@ -153,7 +153,7 @@ export class Notes extends React.PureComponent<NotesProps, NotesState> {
     return (
       <Grid.Row>
         <Loader indeterminate active inline="centered">
-          Loading TODOs
+          Loading Notes
         </Loader>
       </Grid.Row>
     )

@@ -1,23 +1,21 @@
 import 'source-map-support/register'
-import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
-import { CreateNoteRequest } from '../../requests/CreateNoteRequest'
+import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
 import { createLogger } from '../../utils/logger'
-import {createNote} from '../../businessLogic/note'
+import {deleteNote} from '../../businessLogic/note'
 
-const logger = createLogger('createNote')
+const logger = createLogger('deleteNote')
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   
   try{
-    const newNote: CreateNoteRequest = JSON.parse(event.body)
-
+    const noteId = event.pathParameters.noteId
     const authorization = event.headers.Authorization;
     const split = authorization.split(' ');
     const jwtToken = split[1];
   
-    const newToDoItem = await createNote(newNote.name,newNote.dueDate,jwtToken);
-
-    logger.info('Created Note Item',newToDoItem);
+    await deleteNote(jwtToken,noteId);
+  
+    logger.info('Deleted Note',noteId);
   
     return {
       statusCode: 201,
@@ -25,13 +23,13 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        item : newToDoItem
+        noteId
       })
     }
   }
   catch(e)
   {
-    logger.error('Create ToDo caused error.', {error: e});
+    logger.error('Delete Note caused error.', {error: e});
   }
   
   return {

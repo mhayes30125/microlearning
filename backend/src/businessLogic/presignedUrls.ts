@@ -1,7 +1,7 @@
 import * as AWS  from 'aws-sdk'
 import { createLogger } from '../utils/logger'
 import {PresignedUrl} from '../models/PresignedUrl'
-const bucketName = process.env.TODO_S3_BUCKET;
+const bucketName = process.env.NOTE_S3_BUCKET;
 const urlExpiration = process.env.SIGNED_URL_EXPIRATION;
 
 const logger = createLogger('business-presignedUrls')

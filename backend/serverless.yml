@@ -18,9 +18,10 @@ provider:
   region: ${opt:region, 'us-east-1'}
 
   environment:
-   TODOS_TABLE : ToDo-${self:provider.stage}
+   ES_ENDPOINT: https://vpc-notes-search-dev-3wuaj5ofgrjjcyj35wdxkcpxzu.us-east-1.es.amazonaws.com
+   NOTES_TABLE : Note-${self:provider.stage}
    USER_ID_INDEX: UserIdIndex
-   TODO_S3_BUCKET: microlearning-note-${self:provider.stage}
+   NOTE_S3_BUCKET: microlearning-note-${self:provider.stage}
    SIGNED_URL_EXPIRATION: 300
 
 custom:
@@ -41,9 +42,11 @@ custom:
 functions:
 
   Auth:
+    name: ${self:service:name}-auth
     handler: src/lambda/auth/auth0Authorizer.handler
 
   GetNotes:
+    name: ${self:service:name}-get-notes
     handler: src/lambda/http/getNotes.handler
     events:
       - http:
@@ -56,14 +59,15 @@ functions:
         Action:
           - dynamodb:Query
           - dynamodb:GetItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}
       - Effect: Allow
         Action:
           - dynamodb:Query
           - dynamodb:GetItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/UserIdIndex
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}/index/UserIdIndex
 
   GetNote:
+    name: ${self:service:name}-get-note
     handler: src/lambda/http/getNote.handler
     events:
       - http:
@@ -76,9 +80,10 @@ functions:
         Action:
           - dynamodb:GetItem
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}
 
   CreateNote:
+    name: ${self:service:name}-create-note
     handler: src/lambda/http/createNote.handler
     events:
       - http:
@@ -94,9 +99,10 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}
 
   UpdateNote:
+    name: ${self:service:name}-update-note
     handler: src/lambda/http/updateNote.handler
     events:
       - http:
@@ -113,9 +119,10 @@ functions:
         Action:
           - dynamodb:UpdateItem
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}
 
   DeleteNote:
+    name: ${self:service:name}-delete-note
     handler: src/lambda/http/deleteNote.handler
     events:
       - http:
@@ -127,22 +134,38 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:DeleteItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}
 
   GenerateUploadUrl:
+    name: ${self:service:name}-generate-upload-url
     handler: src/lambda/http/generateUploadUrl.handler
     events:
       - http:
           method: post
           path: notes/{noteId}/attachment
           cors: true
-    iamRoleStatementsName: generate-upload-url-role-name
+    iamRoleStatementsName: generate-note-upload-url-role-name
     iamRoleStatements:
       - Effect: Allow
         Action:
           - s3:PutObject
           - s3:GetObject
-        Resource: arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET}/*
+        Resource: arn:aws:s3:::${self:provider.environment.NOTE_S3_BUCKET}/*
+
+  SyncWithElasticsearch:
+    name: ${self:service:name}-elastic-search
+    handler: src/lambda/search/elasticSearchSync.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt NotesTable.StreamArn
+    iamRoleStatementsName: elastic-search-role-name
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - es:*
+        Resource:
+          - arn:aws:es:us-east-1:614747892264:domain/notes-search-dev
 
 resources:
   Resources:
@@ -171,7 +194,9 @@ resources:
           - AttributeName: noteId
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.TODOS_TABLE}
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+        TableName: ${self:provider.environment.NOTES_TABLE}
         LocalSecondaryIndexes:
           - IndexName: ${self:provider.environment.USER_ID_INDEX}
             KeySchema:
@@ -185,7 +210,7 @@ resources:
     AttachmentsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:provider.environment.TODO_S3_BUCKET}
+        BucketName: ${self:provider.environment.NOTE_S3_BUCKET}
         CorsConfiguration:
           CorsRules:
             -
@@ -212,7 +237,7 @@ resources:
               Effect: Allow
               Principal: '*'
               Action: 's3:GetObject'
-              Resource: 'arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET}/*'
+              Resource: 'arn:aws:s3:::${self:provider.environment.NOTE_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket 
           
     GatewayResponseDefault4XX:
@@ -224,4 +249,4 @@ resources:
           gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
         ResponseType: DEFAULT_4XX
         RestApiId:
-          Ref: ApiGatewayRestApi                     
+          Ref: ApiGatewayRestApi      
