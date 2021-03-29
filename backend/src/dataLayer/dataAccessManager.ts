@@ -53,8 +53,7 @@ export class DataAccessManager{
         ":category":updatedNote.category,
         ":question":updatedNote.question,
         ":answer":updatedNote.answer,
-        ":done":updatedNote.done,
-        ":attachmentUrl":updatedNote.attachmentUrl
+        ":done":updatedNote.done
       }
   
       let updateExpression = "set #note=:note, category=:category, question=:question, answer=:answer, done=:done"
