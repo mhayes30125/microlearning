@@ -53,10 +53,12 @@ export async function patchNote(
 ): Promise<void> {
   await Axios.patch(`${apiEndpoint}/notes/${noteId}`, JSON.stringify(
     {
-      name:updatedNote.name,
+      note:updatedNote.note,
+      category:updatedNote.category,
+      question:updatedNote.question,
+      answer: updatedNote.answer,
       done:updatedNote.done,
-      dueDate:updatedNote.dueDate,
-      attachmentUrl: updatedNote.attachmentUrl
+      attachmentUrl:updatedNote.attachmentUrl
     }
   ), {
     headers: {

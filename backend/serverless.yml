@@ -205,7 +205,7 @@ resources:
               - AttributeName: createdAt
                 KeyType: RANGE                
             Projection:
-              ProjectionType: ALL # What attributes will be copied to an index   
+              ProjectionType: ALL # What attributes will be copied to an index 
 
     AttachmentsBucket:
       Type: AWS::S3::Bucket

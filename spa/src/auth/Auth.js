@@ -2,9 +2,6 @@ import auth0 from 'auth0-js';
 import { authConfig } from '../config';
 
 export default class Auth {
-  accessToken;
-  idToken;
-  expiresAt;
 
   auth0 = new auth0.WebAuth({
     domain: authConfig.domain,
@@ -45,22 +42,22 @@ export default class Auth {
   }
 
   getAccessToken() {
-    return this.accessToken;
+    return localStorage.getItem('accessToken');
   }
 
   getIdToken() {
-    return this.idToken;
+    return localStorage.getItem('idToken');
   }
 
   setSession(authResult) {
-    // Set isLoggedIn flag in localStorage
-    localStorage.setItem('isLoggedIn', 'true');
 
     // Set the time that the access token will expire at
     let expiresAt = (authResult.expiresIn * 1000) + new Date().getTime();
-    this.accessToken = authResult.accessToken;
-    this.idToken = authResult.idToken;
-    this.expiresAt = expiresAt;
+
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('expiresAt', expiresAt);
+    localStorage.setItem('accessToken', authResult.accessToken);
+    localStorage.setItem('idToken', authResult.idToken);
 
     // navigate to the home route
     this.history.replace('/');
@@ -79,13 +76,12 @@ export default class Auth {
   }
 
   logout() {
-    // Remove tokens and expiry time
-    this.accessToken = null;
-    this.idToken = null;
-    this.expiresAt = 0;
 
     // Remove isLoggedIn flag from localStorage
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('expiresAt');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('idToken');
 
     this.auth0.logout({
       return_to: window.location.origin
@@ -98,7 +94,7 @@ export default class Auth {
   isAuthenticated() {
     // Check whether the current time is past the
     // access token's expiry time
-    let expiresAt = this.expiresAt;
+    let expiresAt = localStorage.getItem('expiresAt');
     return new Date().getTime() < expiresAt;
   }
 }

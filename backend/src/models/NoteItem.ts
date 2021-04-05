@@ -2,13 +2,13 @@
 export interface NoteItem {
   userId: string
   noteId: string
-  createdAt: string
+  createdAt: number
   note: string
   category: string
   question: string
   answer: string
   done: boolean
-  startDate: string
+  endDate: number
   state: number
   attachmentUrl?: string
 }

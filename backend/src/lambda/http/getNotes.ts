@@ -28,7 +28,8 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   }
   catch(e)
   {
-    logger.error('Get Note caused error.', {error: e});
+    console.log(e);
+    logger.error('Get Notes caused error.', {error: e});
   }
 
   return {

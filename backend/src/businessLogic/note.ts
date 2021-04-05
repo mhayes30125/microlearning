@@ -9,7 +9,8 @@ import {UpdateNoteRequest} from '../requests/UpdateNoteRequest'
 import {CreateNoteRequest} from '../requests/CreateNoteRequest'
 const dataAccessManager = new DataAccessManager();
 const logger = createLogger('business-note')
-const states = [0,3,5,9]
+const states = [1,3,5,9]
+const millisecondsInADay = 86400000;
 
 export async function createNote(createNoteItem:CreateNoteRequest, jwtToken: string): Promise<NoteItem> {
 
@@ -20,13 +21,14 @@ export async function createNote(createNoteItem:CreateNoteRequest, jwtToken: str
     return await dataAccessManager.createNote({
         noteId : uuid.v4(),
         userId : userId,
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
         note : createNoteItem.note,
         category : createNoteItem.category,
         question : createNoteItem.question,
         answer : '',
-        startDate: new Date().toISOString(),
-        state: states[1],
+        attachmentUrl: '',
+        endDate: Date.now(),
+        state: states[0],
         done: false
     });
   }
@@ -55,7 +57,12 @@ export async function getNotes(jwtToken: string): Promise<NoteItem[]> {
 
     logger.info(`Get Notes for: ${userId}`);
     
-    return await dataAccessManager.getNotes(userId);
+    const notes = await dataAccessManager.getNotes(userId);
+
+    return notes.filter(note =>
+      {
+        return note.done == false? true: false;
+      });
   }
 
 export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: string, jwtToken: string): Promise<NoteItem> {
@@ -89,6 +96,10 @@ export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: stri
       setNewState = currentNote.state;
     }    
 
+    //# of milliseconds since Jan 1, 1970 + (days (state) * millisecondsInADay)
+    //before I want to see the note again. aka spaced repetition.
+    const calculatedEndDateByState = currentNote.createdAt + (setNewState * millisecondsInADay)
+
     // 3. Update current Note
     currentNote.note = noteItemRequest.note;
     currentNote.category = noteItemRequest.category;
@@ -96,6 +107,7 @@ export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: stri
     currentNote.answer = noteItemRequest.answer;
     currentNote.done = noteItemRequest.done;
     currentNote.state = setNewState;
+    currentNote.endDate = calculatedEndDateByState;
     currentNote.attachmentUrl = noteItemRequest.attachmentUrl;
     
     // 4. Call the data access layer

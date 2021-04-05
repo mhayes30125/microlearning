@@ -1,4 +1,5 @@
 export interface CreateNoteRequest {
-  name: string
-  dueDate: string
+  note: string
+  category: string
+  question:string
 }

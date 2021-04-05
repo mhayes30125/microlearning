@@ -12,7 +12,7 @@ export class DataAccessManager{
     constructor(
         private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
         private readonly notesTable = process.env.NOTES_TABLE,
-        private readonly userIdIndex = process.env.USER_ID_INDEX,
+        private readonly userIdDoneIndex = process.env.USER_ID_INDEX,
         private readonly logger = createLogger('dataAccessManager')){
     }
 
@@ -106,10 +106,11 @@ export class DataAccessManager{
 
       const result = await this.docClient.query({
         TableName : this.notesTable,
-        IndexName : this.userIdIndex,
-        KeyConditionExpression: 'userId = :userId',
+        IndexName : this.userIdDoneIndex,
+        KeyConditionExpression: 'userId = :userId and endDate >= :now',
         ExpressionAttributeValues: {
-            ':userId': userId
+            ':userId': userId,
+            ':now' : Date.now()
         }
       }).promise();
     
