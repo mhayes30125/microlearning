@@ -53,10 +53,12 @@ export class DataAccessManager{
         ":category":updatedNote.category,
         ":question":updatedNote.question,
         ":answer":updatedNote.answer,
-        ":done":updatedNote.done
+        ":done":updatedNote.done,
+        ":state":updatedNote.state,
+        ":endDate":updatedNote.endDate,
       }
   
-      let updateExpression = "set #note=:note, category=:category, question=:question, answer=:answer, done=:done"
+      let updateExpression = "set #note=:note, category=:category, question=:question, answer=:answer, done=:done, #state=:state,endDate=:endDate"
   
       if(!!updatedNote.attachmentUrl)
       {
@@ -74,7 +76,8 @@ export class DataAccessManager{
         ExpressionAttributeValues:expressionAttributeValues,
         ExpressionAttributeNames:
         {
-            "#note":"note"
+            "#note":"note",
+            "#state":"state"
         },
         ReturnValues:"UPDATED_NEW"
       }).promise();
@@ -107,10 +110,12 @@ export class DataAccessManager{
       const result = await this.docClient.query({
         TableName : this.notesTable,
         IndexName : this.userIdDoneIndex,
-        KeyConditionExpression: 'userId = :userId and endDate >= :now',
+        FilterExpression: 'done = :doneValue',
+        KeyConditionExpression: 'userId = :userId and endDate < :now',
         ExpressionAttributeValues: {
             ':userId': userId,
-            ':now' : Date.now()
+            ':now': Date.now(),
+            ':doneValue' : false
         }
       }).promise();
     

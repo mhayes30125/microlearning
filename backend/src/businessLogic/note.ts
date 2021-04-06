@@ -9,7 +9,7 @@ import {UpdateNoteRequest} from '../requests/UpdateNoteRequest'
 import {CreateNoteRequest} from '../requests/CreateNoteRequest'
 const dataAccessManager = new DataAccessManager();
 const logger = createLogger('business-note')
-const states = [1,3,5,9]
+const states = [-1,3,5,9,12]
 const millisecondsInADay = 86400000;
 
 export async function createNote(createNoteItem:CreateNoteRequest, jwtToken: string): Promise<NoteItem> {
@@ -27,7 +27,7 @@ export async function createNote(createNoteItem:CreateNoteRequest, jwtToken: str
         question : createNoteItem.question,
         answer : '',
         attachmentUrl: '',
-        endDate: Date.now(),
+        endDate: Date.now() + (states[0] * millisecondsInADay),
         state: states[0],
         done: false
     });
@@ -57,23 +57,19 @@ export async function getNotes(jwtToken: string): Promise<NoteItem[]> {
 
     logger.info(`Get Notes for: ${userId}`);
     
-    const notes = await dataAccessManager.getNotes(userId);
-
-    return notes.filter(note =>
-      {
-        return note.done == false? true: false;
-      });
+    return await dataAccessManager.getNotes(userId);
   }
 
 export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: string, jwtToken: string): Promise<NoteItem> {
     
-    logger.info(`Update Notes for: ${noteId}`);
+    logger.info('Update Notes for',noteItemRequest);
     // 1. Get the current note
     const currentNote = await getNote(noteId,jwtToken);
 
     // 2. Determine the appropriate state for this note
 
     var setNewState = 0;
+    var calculatedEndDateByState = 0;
 
     // Check the incoming request to see if we are done and want to move on to the next state.
     // If there is not another state to move to, then done = true will be saved in the db.
@@ -82,23 +78,28 @@ export async function updateNote(noteItemRequest: UpdateNoteRequest,noteId: stri
     {
       const currentIndex = states.indexOf(currentNote.state);
       const nextIndex = currentIndex + 1;
+      logger.info(`here mike ${currentNote.state} ${currentIndex} ${nextIndex} ${states.length}`);
       if(nextIndex <= states.length - 1)
       {
         setNewState = states[nextIndex];
-        
+
+        //# of milliseconds since Jan 1, 1970 + (days (state) * millisecondsInADay)
+        //before I want to see the note again. aka spaced repetition.
+
+        calculatedEndDateByState = currentNote.createdAt + (setNewState * millisecondsInADay);
+
         // Reset done for the next state
         noteItemRequest.done = false;
-      }      
+      }    
     }
     else{
       // If I have marked the answer as not done, then I do not want to 
-      // increment the state.
+      // increment the state and end date.
       setNewState = currentNote.state;
+      calculatedEndDateByState = currentNote.endDate;
     }    
 
-    //# of milliseconds since Jan 1, 1970 + (days (state) * millisecondsInADay)
-    //before I want to see the note again. aka spaced repetition.
-    const calculatedEndDateByState = currentNote.createdAt + (setNewState * millisecondsInADay)
+    
 
     // 3. Update current Note
     currentNote.note = noteItemRequest.note;

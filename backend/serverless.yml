@@ -184,8 +184,8 @@ resources:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: S            
+          - AttributeName: endDate
+            AttributeType: N            
           - AttributeName: noteId
             AttributeType: S
         KeySchema:
@@ -202,7 +202,7 @@ resources:
             KeySchema:
               - AttributeName: userId
                 KeyType: HASH
-              - AttributeName: createdAt
+              - AttributeName: endDate
                 KeyType: RANGE                
             Projection:
               ProjectionType: ALL # What attributes will be copied to an index 
