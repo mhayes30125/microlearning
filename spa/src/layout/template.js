@@ -95,8 +95,13 @@ const Template = ({auth}) =>
             question: 'newQuestion'
           })
 
+          const wrappedNote ={
+            ...newNote,
+            editDisable: true
+        };
+
           setNotes(
-            notes => [...notes, newNote]
+            notes => [...notes, wrappedNote]
           )
         } catch(error) {
           console.log(error);
@@ -195,6 +200,15 @@ const Template = ({auth}) =>
         try {
 
             await patchNote(auth.getIdToken(), note.noteId, note);
+
+            setNotes(notes => notes.filter((item)=>
+            {
+                if(item.noteId === note.noteId && note.done === true)
+                {
+                    return false;
+                }
+                return true;
+            }));
 
             onNoteEditButton(note);
             alert("Item saved");
